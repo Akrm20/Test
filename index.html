@@ -146,11 +146,6 @@
             margin: 0.5rem 0;                  /* مسافة حول القيم */
         }
 
-        /* ========== أنماط بطاقات المنتجات ========== */
-        .product-card:hover {
-            transform: translateY(-3px);       /* تأثير رفع عند التمرير */
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* ظل أكبر عند التمرير */
-        }
 
         /* ========== أنماط سلة المشتريات في نقطة البيع ========== */
         #posCart {
@@ -220,9 +215,6 @@
                 left: 0;                       /* المحاذاة لليسار */
             }
             
-            #sidebarToggle {
-                display: none;                 /* إخفاء زر toggle الشريط على الشاشات الكبيرة */
-            }
             
             #posCart {
                 left: 0;                       /* المحاذاة لليسار */
@@ -233,6 +225,16 @@
             .fab-cart {
                 display: none;                 /* إخفاء زر FAB على الشاشات الكبيرة */
             }
+        }
+        /* ✅ إضافة عنصر Canvas المفقود للكاميرا */
+        #cameraCanvas {
+            display: none;
+        }
+
+        #cameraVideo {
+            border-radius: 8px;
+            background: #000;
+            max-width: 100%;
         }
 
         /* ========== أنماط المخزون ========== */
@@ -706,10 +708,6 @@
             border-color: var(--primary-color);
         }
 
-        .product-card.added {
-            border: 2px solid var(--success);
-            box-shadow: 0 0 15px rgba(40, 167, 69, 0.3);
-        }
 
         /* حاوية الصورة */
         .product-image-container {
@@ -835,68 +833,6 @@
                 font-size: 0.85rem;
             }
         }
-        /* ========== تحسينات CSS للاتجاه RTL وإمكانية الوصول ========== */
-
-        /* تحسينات التركيز لإمكانية الوصول */
-        :focus-visible {
-            outline: 2px solid var(--primary-color);
-            outline-offset: 2px;
-            border-radius: 4px;
-        }
-
-        /* تحسينات التنقل باللوحة المفاتيح */
-        .btn:focus,
-        .nav-link:focus,
-        .product-card:focus {
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.25);
-        }
-
-        /* الخصائص المنطقية للاتجاه RTL */
-        .sidebar {
-            border-inline-start: 1px solid var(--sidebar-link-hover);
-            margin-inline-end: 0;
-        }
-
-        .header {
-            padding-inline-start: 1rem;
-            padding-inline-end: 1rem;
-        }
-
-        /* تحسينات النص للغة العربية */
-        body {
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-            line-height: 1.6;
-            text-align: start;
-        }
-
-        /* تحسينات الجوال واللمس */
-        @media (max-width: 768px) {
-            .action-btn {
-                min-width: 44px;
-                min-height: 44px;
-            }
-            
-            .product-card {
-                min-height: 120px;
-            }
-            
-            .search-result-item {
-                padding: 1rem;
-            }
-        }
-
-        /* إخفاء العناصر المرئية فقط لقارئات الشاشة */
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
 
         /* تحسينات التباين للوضع الداكن */
         [data-bs-theme="dark"] {
@@ -930,6 +866,11 @@
 
         [data-bs-theme="dark"] .product-emoji-placeholder {
             background: linear-gradient(135deg, #4fd1c7 0%, #63b3ed 100%);
+        }
+
+        .currentBalance {
+            background-color: blueviolet;
+            font-size: 20px;
         }
 
     </style>
@@ -2182,6 +2123,8 @@
         تم إضافة <span id="notificationProductName"></span> إلى السلة
     </div>
 
+    <canvas id="cameraCanvas"></canvas>
+
     <!-- مكتبات JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -2207,30 +2150,30 @@
 
         const CURRENCY_RATES = {
             'YER': 1,
-            'SAR': 425,
-            'USD': 1160
+            'SAR': 0.00235, //425
+            'USD': 0.000627 //1617
         };
 
         const UNIT_CONVERSIONS = {
             'كرتون': 24,
             'درزن': 12,
-            'سلة': 1,
-            'كيس': 1,
-            'طن': 1000,
+            'سلة': 20,
             'حبة': 1,
-            'كيلو': 1,
-            'لتر': 1,
-            'متر': 1,
-            'علبة': 1,
-            'زجاجة': 1
+            'كيلو': 1
         };
 
         /**
         * تحويل السعر بين العملات
         */
-        function convertCurrency(amount, fromCurrency, toCurrency = 'YER') {
-            const rate = CURRENCY_RATES[fromCurrency] / CURRENCY_RATES[toCurrency];
-            return amount * rate;
+        function convertCurrencyWithRate(amount, fromCurrency, toCurrency, exchangeRate = 1) {
+            if (fromCurrency === toCurrency) {
+                return amount;
+            }
+            
+            const baseAmount = amount * (CURRENCY_RATES[fromCurrency] || 1);
+            const targetAmount = baseAmount / (CURRENCY_RATES[toCurrency] || 1);
+            
+            return toCurrency === 'YER' ? targetAmount : targetAmount / exchangeRate;
         }
 
         /**
@@ -2264,73 +2207,6 @@
                 }
             }
         }
-        async function recordPurchaseTaxEntry(purchaseInvoice, invoiceId) {
-            try {
-                const taxAmount = purchaseInvoice.tax || 0;
-                
-                if (taxAmount > 0) {
-                    const description = `ضريبة مشتريات - فاتورة ${purchaseInvoice.invoiceNumber}`;
-                    
-                    const debits = [{
-                        accountCode: '4010', // ضريبة القيمة المضافة (مدينة)
-                        amount: taxAmount,
-                        description: `ضريبة مدفوعة على مشتريات من ${purchaseInvoice.supplierName}`
-                    }];
-                    
-                    const credits = [{
-                        accountCode: '2030', // الضريبة المستحقة
-                        amount: taxAmount,
-                        description: 'ضريبة مستحقة الدفع'
-                    }];
-                    
-                    await createJournalEntry(
-                        description,
-                        debits,
-                        credits,
-                        'PurchaseTax',
-                        invoiceId
-                    );
-                }
-            } catch (error) {
-                console.error('❌ فشل تسجيل قيد الضريبة:', error);
-            }
-        }
-
-        /**
-        * تسجيل قيد محاسبي للضريبة في المبيعات
-        */
-        async function recordSalesTaxEntry(invoice, invoiceId) {
-            try {
-                const taxAmount = invoice.tax || 0;
-                
-                if (taxAmount > 0) {
-                    const description = `ضريبة مبيعات - فاتورة ${invoice.invoiceNumber}`;
-                    
-                    const debits = [{
-                        accountCode: '2030', // الضريبة المستحقة
-                        amount: taxAmount,
-                        description: `ضريبة محصلة من مبيعات للعميل ${invoice.customerName}`
-                    }];
-                    
-                    const credits = [{
-                        accountCode: '4020', // ضريبة القيمة المضافة (دائنة)
-                        amount: taxAmount,
-                        description: 'ضريبة مبيعات مستحقة'
-                    }];
-                    
-                    await createJournalEntry(
-                        description,
-                        debits,
-                        credits,
-                        'SalesTax',
-                        invoiceId
-                    );
-                }
-            } catch (error) {
-                console.error('❌ فشل تسجيل قيد ضريبة المبيعات:', error);
-            }
-        }        
-
         // ==================== دالة تحميل المكتبات الاحتياطية ====================
         function loadFallbackLibraries() {
             return new Promise((resolve) => {
@@ -2769,11 +2645,7 @@
             loadDashboardData();
             alert('✅ تم تحديث بيانات لوحة التحكم');
         }
-
-
-
         // ==================== 4.1. التحكم في النمط والتبويبات ====================
-        
         /**
          * تبديل النمط بين الفاتح والداكن
          */
@@ -2919,11 +2791,12 @@
             { code: '3040', name: 'مصاريف أخرى', type: 'expense', parentCode: '3000', balance: 0.00 },
             { code: '3050', name: 'إيرادات أخرى', type: 'revenue', parentCode: '3000', balance: 0.00 }
         ];
+
         /**
         * تهيئة IndexedDB
         */
         function initDatabase() {
-            const request = indexedDB.open('ERP82_Database', 1); // ⭐⭐⭐⭐⭐⭐
+            const request = indexedDB.open('ERP86_Database', 1); // ⭐⭐⭐⭐⭐⭐
 
             request.onerror = function(event) {
                 console.error('فشل في فتح قاعدة البيانات:', event.target.error);
@@ -3093,6 +2966,375 @@
                 console.log('تم إنشاء/تحديث مخازن البيانات والفهارس بنجاح.');
             };
         }
+
+
+        async function addSampleData() {
+            try {
+                console.log('🚀 بدء إضافة البيانات الافتراضية النموذجية...');
+
+                // 1. إضافة العملاء
+                const sampleCustomers = [
+                    {
+                        name: 'أحمد محمد',
+                        phone: '771234567',
+                        email: 'ahmed@example.com',
+                        address: 'صنعاء - شارع الزبيري',
+                        balance: 0,
+                        accCode: '1040001'
+                    },
+                    {
+                        name: 'فاطمة علي',
+                        phone: '778765432',
+                        email: 'fatima@example.com',
+                        address: 'تعز - شارع الثورة',
+                        balance: 0,
+                        accCode: '1040002'
+                    }
+                ];
+
+                // 2. إضافة الموردين
+                const sampleSuppliers = [
+                    {
+                        name: 'شركة الأمل للتجارة',
+                        phone: '01123456',
+                        email: 'al-amal@example.com',
+                        address: 'صنعاء - شارع حدة',
+                        accCode: '2010001'
+                    },
+                    {
+                        name: 'مؤسسة النور للمواد الغذائية',
+                        phone: '01765432',
+                        email: 'al-noor@example.com',
+                        address: 'تعز - المنطقة الصناعية',
+                        accCode: '2010002'
+                    }
+                ];
+
+                // 3. إضافة الفئات
+                const sampleCategories = [
+                    {
+                        name: 'مواد غذائية',
+                        description: 'منتجات المواد الغذائية الأساسية',
+                        icon: '🍞'
+                    },
+                    {
+                        name: 'مشروبات',
+                        description: 'مشروبات باردة وساخنة',
+                        icon: '🥤'
+                    }
+                ];
+
+                // 4. إضافة المنتجات
+                const sampleProducts = [
+                    // فئة المواد الغذائية
+                    {
+                        code: 'FD001',
+                        name: 'أرز بسمتي',
+                        purchasePrice: 25.5,
+                        salePrice: 35.0,
+                        wholesalePrice: 28.0,
+                        quantity: 50,
+                        minQuantity: 10,
+                        expiryDate: '2025-12-31',
+                        image: '🍚',
+                        baseUnit: 'كيلو',
+                        purchaseUnit: 'كرتون',
+                        conversionFactor: 24,
+                        currency: 'YER'
+                    },
+                    {
+                        code: 'FD002',
+                        name: 'سمن بلدي',
+                        purchasePrice: 42.0,
+                        salePrice: 55.0,
+                        wholesalePrice: 45.0,
+                        quantity: 30,
+                        minQuantity: 5,
+                        expiryDate: '2025-10-15',
+                        image: '🫕',
+                        baseUnit: 'كيلو',
+                        purchaseUnit: 'كرتون',
+                        conversionFactor: 1,
+                        currency: 'YER'
+                    },
+                    // فئة المشروبات
+                    {
+                        code: 'DR001',
+                        name: 'عصير برتقال',
+                        purchasePrice: 8.5,
+                        salePrice: 12.0,
+                        wholesalePrice: 9.0,
+                        quantity: 100,
+                        minQuantity: 20,
+                        expiryDate: '2025-08-20',
+                        image: '🧃',
+                        baseUnit: 'حبة',
+                        purchaseUnit: 'كرتون',
+                        conversionFactor: 24,
+                        currency: 'YER'
+                    },
+                    {
+                        code: 'DR002',
+                        name: 'مشروب غازي',
+                        purchasePrice: 6.0,
+                        salePrice: 9.0,
+                        wholesalePrice: 6.5,
+                        quantity: 80,
+                        minQuantity: 15,
+                        expiryDate: '2026-01-30',
+                        image: '🥤',
+                        baseUnit: 'حبة',
+                        purchaseUnit: 'كرتون',
+                        conversionFactor: 24,
+                        currency: 'YER'
+                    }
+                ];
+
+                // بدء المعاملة
+                const transaction = db.transaction([
+                    'customers', 
+                    'suppliers', 
+                    'categories', 
+                    'products',
+                    'chartOfAccounts'
+                ], 'readwrite');
+
+                // 1. حفظ العملاء وإنشاء حساباتهم
+                const customersStore = transaction.objectStore('customers');
+                const coaStore = transaction.objectStore('chartOfAccounts');
+                
+                for (const customer of sampleCustomers) {
+                    const customerId = await new Promise((resolve, reject) => {
+                        const request = customersStore.add(customer);
+                        request.onsuccess = () => resolve(request.result);
+                        request.onerror = reject;
+                    });
+                    
+                    // إنشاء حساب فردي للعميل في شجرة الحسابات
+                    const customerAccount = {
+                        code: customer.accCode,
+                        name: customer.name,
+                        type: 'asset',
+                        parentCode: '1040',
+                        balance: 0,
+                        customerId: customerId,
+                        accountType: 'customer'
+                    };
+                    
+                    await coaStore.add(customerAccount);
+                    console.log(`✅ تم إضافة العميل: ${customer.name}`);
+                }
+
+                // 2. حفظ الموردين وإنشاء حساباتهم
+                const suppliersStore = transaction.objectStore('suppliers');
+                
+                for (const supplier of sampleSuppliers) {
+                    const supplierId = await new Promise((resolve, reject) => {
+                        const request = suppliersStore.add(supplier);
+                        request.onsuccess = () => resolve(request.result);
+                        request.onerror = reject;
+                    });
+                    
+                    // إنشاء حساب فردي للمورد في شجرة الحسابات
+                    const supplierAccount = {
+                        code: supplier.accCode,
+                        name: supplier.name,
+                        type: 'liability',
+                        parentCode: '2010',
+                        balance: 0,
+                        supplierId: supplierId,
+                        accountType: 'supplier'
+                    };
+                    
+                    await coaStore.add(supplierAccount);
+                    console.log(`✅ تم إضافة المورد: ${supplier.name}`);
+                }
+
+                // 3. حفظ الفئات
+                const categoriesStore = transaction.objectStore('categories');
+                const savedCategories = [];
+                
+                for (const category of sampleCategories) {
+                    const categoryId = await new Promise((resolve, reject) => {
+                        const request = categoriesStore.add(category);
+                        request.onsuccess = () => resolve(request.result);
+                        request.onerror = reject;
+                    });
+                    
+                    savedCategories.push({
+                        ...category,
+                        id: categoryId
+                    });
+                    
+                    console.log(`✅ تم إضافة الفئة: ${category.name}`);
+                }
+
+                // 4. حفظ المنتجات مع ربطها بالفئات
+                const productsStore = transaction.objectStore('products');
+                
+                for (let i = 0; i < sampleProducts.length; i++) {
+                    const product = sampleProducts[i];
+                    // ربط المنتجين الأولين بالفئة الأولى، والمنتجين الآخرين بالفئة الثانية
+                    product.categoryId = i < 2 ? savedCategories[0].id : savedCategories[1].id;
+                    
+                    await productsStore.add(product);
+                    console.log(`✅ تم إضافة المنتج: ${product.name}`);
+                }
+
+                // 5. تحديث قيمة المخزون في شجرة الحسابات
+                const totalInventoryValue = sampleProducts.reduce((total, product) => {
+                    return total + (product.purchasePrice * product.quantity);
+                }, 0);
+
+                const inventoryAccount = await new Promise((resolve) => {
+                    const request = coaStore.get('1030');
+                    request.onsuccess = () => resolve(request.result);
+                });
+
+                if (inventoryAccount) {
+                    inventoryAccount.balance = totalInventoryValue;
+                    await coaStore.put(inventoryAccount);
+                    console.log(`💰 تم تحديث قيمة المخزون: ${totalInventoryValue.toFixed(2)} ر.ي`);
+                }
+
+                // انتظار اكتمال المعاملة
+                transaction.oncomplete = () => {
+                    console.log('🎉 تم إضافة جميع البيانات الافتراضية بنجاح!');
+                    
+                    // تحديث الواجهات
+                    setTimeout(() => {
+                        loadProductsTable();
+                        loadProductsForPOS();
+                        loadCategoriesView();
+                        displayChartOfAccounts();
+                        updateBalance();
+                    }, 500);
+                    
+                    // عرض رسالة نجاح
+                    setTimeout(() => {
+                        alert(`✅ تم إضافة البيانات الافتراضية بنجاح!
+
+        📊 البيانات المضافة:
+        • ${sampleCustomers.length} عميل
+        • ${sampleSuppliers.length} مورد  
+        • ${sampleCategories.length} فئة منتجات
+        • ${sampleProducts.length} منتج
+        • إجمالي قيمة المخزون: ${totalInventoryValue.toFixed(2)} ر.ي
+
+        يمكنك الآن تجربة النظام بالبيانات النموذجية.`);
+                    }, 1000);
+                };
+
+            } catch (error) {
+                console.error('❌ فشل إضافة البيانات الافتراضية:', error);
+                alert('❌ فشل في إضافة البيانات الافتراضية. يرجى المحاولة مرة أخرى.');
+            }
+        }
+
+        /**
+        * التحقق من وجود بيانات وإضافة البيانات الافتراضية إذا لم تكن موجودة
+        */
+        async function checkAndAddSampleData() {
+            try {
+                // الانتظار حتى تكتمل تهيئة قاعدة البيانات
+                if (!db) {
+                    console.log('⏳ في انتظار تهيئة قاعدة البيانات...');
+                    setTimeout(() => checkAndAddSampleData(), 500);
+                    return;
+                }
+
+                console.log('🔍 التحقق من وجود البيانات...');
+
+                // التحقق من وجود منتجات
+                const products = await getAllProducts();
+                const customers = await loadCustomers();
+                const suppliers = await loadSuppliers();
+                
+                console.log(`📊 نتائج التحقق: ${products.length} منتج, ${customers.length} عميل, ${suppliers.length} مورد`);
+                
+                if (products.length === 0 && customers.length === 0 && suppliers.length === 0) {
+                    // إذا لم توجد أي بيانات، نعرض خيار إضافة البيانات الافتراضية
+                    console.log('📝 لم توجد بيانات، عرض خيار الإضافة...');
+                    
+                    // استخدام setTimeout لتأكيد تحميل الصفحة بالكامل أولاً
+                    setTimeout(() => {
+                        if (confirm('🎯 مرحباً بك في نظام Micro-ERP!\n\nهل ترغب في إضافة بيانات افتراضية نموذجية لتجربة النظام؟\n\nسيتم إضافة:\n• 2 عملاء\n• 2 موردين\n• 2 فئات منتجات\n• 4 منتجات مختلفة')) {
+                            addSampleData();
+                        }
+                    }, 1000);
+                } else {
+                    console.log('✅ توجد بيانات بالفعل، لا حاجة لإضافة بيانات افتراضية.');
+                }
+            } catch (error) {
+                console.error('❌ فشل التحقق من البيانات:', error);
+                // إعادة المحاولة بعد ثانية في حالة الخطأ
+                setTimeout(() => checkAndAddSampleData(), 1000);
+            }
+        }
+
+        /**
+        * تهيئة التطبيق مع التحقق من البيانات
+        */
+        async function initializeAppWithSampleData() {
+            try {
+                console.log('🚀 بدء تهيئة التطبيق مع البيانات النموذجية...');
+                
+                // تهيئة قاعدة البيانات أولاً
+                await new Promise((resolve) => {
+                    const checkDB = () => {
+                        if (db) {
+                            resolve();
+                        } else {
+                            setTimeout(checkDB, 100);
+                        }
+                    };
+                    checkDB();
+                });
+
+                console.log('✅ قاعدة البيانات جاهزة، التحقق من البيانات...');
+                
+                // ثم التحقق من البيانات
+                await checkAndAddSampleData();
+                
+            } catch (error) {
+                console.error('❌ فشل تهيئة التطبيق:', error);
+            }
+        }
+
+        // إضافة زر يدوي لإضافة البيانات الافتراضية في الإعدادات
+        function addSampleDataButtonToSettings() {
+            try {
+                const settingsModule = document.getElementById('settings');
+                if (settingsModule) {
+                    // التحقق إذا كان الزر موجوداً بالفعل
+                    if (document.getElementById('sampleDataBtn')) return;
+
+                    const button = document.createElement('button');
+                    button.id = 'sampleDataBtn';
+                    button.className = 'btn btn-info mt-3 w-100';
+                    button.innerHTML = '<i class="bi bi-database-add me-2"></i> إضافة بيانات افتراضية نموذجية';
+                    button.onclick = function() {
+                        if (confirm('هل تريد إضافة بيانات افتراضية نموذجية؟\n\nسيتم إضافة:\n• 2 عملاء\n• 2 موردين\n• 2 فئات منتجات\n• 4 منتجات مختلفة')) {
+                            addSampleData();
+                        }
+                    };
+                    
+                    const settingsCard = settingsModule.querySelector('.card');
+                    if (settingsCard) {
+                        // إضافة زر البيانات الافتراضية قبل زر النسخ الاحتياطي
+                        const backupBtn = settingsCard.querySelector('#backupBtn');
+                        if (backupBtn) {
+                            settingsCard.insertBefore(button, backupBtn.parentNode);
+                        } else {
+                            settingsCard.appendChild(button);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('فشل إضافة زر البيانات الافتراضية:', error);
+            }
+        }
+
 
         /**
          * تهيئة شجرة الحسابات الافتراضية عند أول تشغيل.
@@ -3373,7 +3615,7 @@
                 } catch (error) {
                     console.warn('⚠️ فشل التحديث التلقائي للرصيد:', error);
                 }
-            }, 5000); // كل 5 ثوان
+            }, 50000); // كل 5 ثوان
         }
 
         // ==================== 4.3. إدارة المخزون ====================
@@ -4399,7 +4641,11 @@
                 
                 // تحديث الواجهات
                 loadProductsTable();
-                loadCategoriesView();
+                setTimeout(() => {
+                    loadCategoriesView();
+                    loadCategoriesBar();
+
+                }, 100);
                 displayChartOfAccounts();
                 updateBalance();
                 
@@ -4994,6 +5240,7 @@
                     // إضافة حدث النقر لإضافة المنتج للسلة
                     productElement.addEventListener('click', () => {
                         addToCart(product.id, product.name, product.salePrice, product.purchasePrice);
+                        updateFloatingCart();
                     });
                     
                     productsGrid.appendChild(productElement);
@@ -5545,86 +5792,54 @@
             }
         }
 
-
+        // ==================== إصلاح دالة حفظ الفاتورة المبيعات ====================
 
         /**
-        * حفظ الفاتورة مع النظام المحاسبي المتكامل - الإصدار النهائي المصحح
+        * حفظ الفاتورة المحدثة مع إصلاحات محاسبية
         */
-        async function saveInvoice() {
+        async function saveInvoiceFixed() {
             if (currentCart.length === 0) {
                 alert('السلة فارغة! أضف منتجات قبل حفظ الفاتورة.');
                 return;
             }
-            
-            try {
-                console.log('🚀 بدء عملية حفظ الفاتورة مع النظام الجديد...');
-                
-                // التحقق من توفر المخزون أولاً
-                await validateCartStock();
-                
-                // حساب الإجماليات
-                const subtotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-                
-                // الحصول على إعدادات الضريبة والعملة
-                const taxRate = parseFloat(document.getElementById('taxRateInput').value) || 0;
-                const currency = document.getElementById('currencySelect').value;
-                const exchangeRate = parseFloat(document.getElementById('exchangeRateInput').value) || 1;
-                const customerId = document.getElementById('customerSelect').value;
-                const paymentMethod = document.getElementById('paymentMethodSelect').value;
-                
-                // حساب الضريبة والإجمالي (بدون خصم)
-                const taxAmount = subtotal * (taxRate / 100);
-                const total = subtotal + taxAmount;
-                
-                console.log('🧮 الحسابات:', { 
-                    subtotal, 
-                    taxAmount, 
-                    total,
-                    customerId,
-                    paymentMethod
-                });
 
-                // حساب تكلفة البضاعة المباعة
-                let costOfGoods = 0;
-                const productUpdates = [];
-                
+            try {
+                console.log('🚀 بدء عملية حفظ الفاتورة المحدّثة...');
+
+                // التحقق من المخزون
                 for (const item of currentCart) {
                     const product = await getProductById(item.id);
-                    if (product) {
-                        const itemCost = (product.purchasePrice || 0) * item.quantity;
-                        costOfGoods += itemCost;
-                        
-                        // تحضير تحديثات المنتجات
-                        productUpdates.push({
-                            product: product,
-                            newQuantity: product.quantity - item.quantity,
-                            itemName: product.name
-                        });
-                        
-                        console.log(`📦 منتج: ${product.name}, الكمية: ${item.quantity}, التكلفة: ${itemCost}`);
+                    if (product.quantity < item.quantity) {
+                        throw new Error(`الكمية غير متاحة للمنتج ${product.name}! المتاح: ${product.quantity}`);
                     }
                 }
 
-                console.log(`💰 تكلفة البضاعة المباعة: ${costOfGoods}`);
+                // حساب الإجماليات
+                const subtotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const taxRate = parseFloat(document.getElementById('taxRateInput').value) || 0;
+                const taxAmount = subtotal * (taxRate / 100);
+                const total = subtotal + taxAmount;
 
-                // الحصول على بيانات العميل وحسابه
-                let customerAccountCode = '1040000'; // عملاء نقديون افتراضي
-                let customerName = 'عميل نقدي';
-                
-                if (customerId) {
-                    try {
-                        const customer = await getCustomerById(parseInt(customerId));
-                        if (customer && customer.accCode) {
-                            customerAccountCode = customer.accCode;
-                            customerName = customer.name;
-                            console.log(`✅ استخدام حساب العميل الفردي: ${customerAccountCode} - ${customerName}`);
-                        }
-                    } catch (error) {
-                        console.error('❌ خطأ في جلب بيانات العميل:', error);
-                    }
-                }
+                // الحصول على بيانات العميل والدفع
+                const customerSelect = document.getElementById('customerSelect');
+                const customerId = customerSelect.value || null;
+                const customerName = customerSelect.options[customerSelect.selectedIndex]?.text || 'عميل نقدي';
+                const paymentMethod = document.getElementById('paymentMethodSelect').value;
 
-                // توليد رقم فاتورة فريد
+                // حساب COGS الصحيح
+                let cogsAmount = 0;
+                const cartWithCosts = await Promise.all(currentCart.map(async item => {
+                    const product = await getProductById(item.id);
+                    const itemCOGS = product.purchasePrice * item.quantity;
+                    cogsAmount += itemCOGS;
+                    return {
+                        ...item,
+                        averageCost: product.purchasePrice,
+                        cogsAmount: itemCOGS
+                    };
+                }));
+
+                // توليد رقم فاتورة
                 let invoiceNumber = `INV-${invoiceCounter}`;
                 let isInvoiceNumberUnique = false;
                 let attempts = 0;
@@ -5640,69 +5855,59 @@
                     }
                 }
 
+                // إنشاء الفاتورة
                 const invoice = {
                     invoiceNumber: invoiceNumber,
                     date: new Date().toISOString(),
-                    customerId: customerId || null,
+                    customerId: customerId,
                     customerName: customerName,
-                    customerAccount: customerAccountCode,
-                    paymentMethod: paymentMethod,
-                    items: JSON.parse(JSON.stringify(currentCart)),
+                    customerAccount: '1040000',
+                    items: cartWithCosts,
                     subtotal: subtotal,
                     tax: taxAmount,
-                    total: total,
-                    status: 'completed',
-                    costOfGoods: costOfGoods,
                     taxRate: taxRate,
-                    currency: currency,
-                    exchangeRate: exchangeRate,
+                    total: total,
+                    cogsAmount: cogsAmount,
+                    paymentMethod: paymentMethod,
+                    currency: 'YER',
+                    status: 'completed',
                     createdAt: new Date().toISOString()
                 };
 
-                console.log('🧾 بيانات الفاتورة النهائية:', invoice);
+                // تنفيذ المعاملة
+                await executeInvoiceTransactionFixed(invoice, cartWithCosts, customerId);
 
-                // تنفيذ جميع العمليات في معاملة واحدة
-                await executeInvoiceTransaction(invoice, productUpdates, customerId);
-                
-                // تحديث الواجهة بعد نجاح العملية
+                // مسح السلة
                 currentCart = [];
                 updateCartDisplay();
                 updateCartCount();
                 updateFloatingCart();
-                
+
                 // إغلاق سلة المشتريات
                 const posCart = document.getElementById('posCart');
                 if (posCart) {
                     posCart.classList.remove('show');
                 }
-                
-                // إعادة تحميل البيانات
-                if (currentView === 'products' && currentCategoryId) {
-                    loadProductsForCategory(currentCategoryId);
-                }
-                
+
+                // تحديث الواجهات
                 updateBalance();
                 displayChartOfAccounts();
-                
+
                 // عرض نموذج النجاح
                 showSuccessModal(invoice);
-                
-                console.log('✅ تم حفظ الفاتورة بنجاح مع النظام الجديد!');
-                
+
+                console.log('✅ تم حفظ الفاتورة بنجاح مع جميع الإصلاحات المحاسبية!');
+
             } catch (error) {
-                console.error('❌ خطأ في حفظ الفاتورة:', error);
-                alert(`❌ فشل في حفظ الفاتورة: ${error.message}`);
-                
-                // تحديث الرصيد مباشرة في حالة الفشل
-                updateBalance();
-                displayChartOfAccounts();
+                console.error('❌ فشل حفظ الفاتورة:', error);
+                alert(`❌ فشل حفظ الفاتورة: ${error.message}`);
             }
         }
 
         /**
-        * تنفيذ جميع عمليات الفاتورة في معاملة واحدة
+        * تنفيذ معاملة الفاتورة المحدّثة
         */
-        function executeInvoiceTransaction(invoice, productUpdates, customerId) {
+        function executeInvoiceTransactionFixed(invoice, productUpdates, customerId) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([
                     'invoices', 
@@ -5712,44 +5917,47 @@
                     'journalEntries',
                     'chartOfAccounts'
                 ], 'readwrite');
-                
+
                 transaction.onerror = (e) => {
-                    console.error('❌ خطأ في المعاملة:', e.target.error);
+                    console.error('❌ خطأ في معاملة الفاتورة:', e.target.error);
                     reject(new Error(`فشل في معاملة قاعدة البيانات: ${e.target.error}`));
                 };
-                
+
                 transaction.oncomplete = () => {
                     console.log('✅ اكتملت معاملة الفاتورة بنجاح');
                     resolve();
                 };
-                
-                const invoiceStore = transaction.objectStore('invoices');
+
+                const invoicesStore = transaction.objectStore('invoices');
                 const productsStore = transaction.objectStore('products');
                 const customersStore = transaction.objectStore('customers');
                 const cashStore = transaction.objectStore('cashTransactions');
                 const journalStore = transaction.objectStore('journalEntries');
                 const coaStore = transaction.objectStore('chartOfAccounts');
-                
+
                 // 1. تحديث كميات المنتجات
                 console.log('🔄 تحديث كميات المنتجات...');
-                for (const update of productUpdates) {
-                    update.product.quantity = update.newQuantity;
-                    update.product.lastSold = new Date().toISOString();
-                    const putRequest = productsStore.put(update.product);
-                    putRequest.onerror = (e) => {
-                        console.error(`❌ فشل تحديث المنتج ${update.itemName}:`, e.target.error);
+                for (const item of productUpdates) {
+                    const productRequest = productsStore.get(item.id);
+                    productRequest.onsuccess = (e) => {
+                        const product = e.target.result;
+                        if (product) {
+                            product.quantity -= item.quantity;
+                            product.lastSold = new Date().toISOString();
+                            productsStore.put(product);
+                        }
                     };
                 }
-                
+
                 // 2. حفظ الفاتورة
                 console.log('💾 حفظ الفاتورة...');
-                const invoiceRequest = invoiceStore.add(invoice);
+                const invoiceRequest = invoicesStore.add(invoice);
                 
                 invoiceRequest.onsuccess = (e) => {
                     const invoiceId = e.target.result;
                     invoiceCounter++;
                     console.log(`✅ تم حفظ الفاتورة برقم: ${invoiceId}`);
-                    
+
                     // 3. تحديث رصيد العميل إذا كانت فاتورة آجلة
                     if (invoice.paymentMethod === 'credit' && customerId) {
                         console.log('👤 تحديث رصيد العميل...');
@@ -5760,24 +5968,14 @@
                             if (customer) {
                                 customer.balance = (customer.balance || 0) + invoice.total;
                                 customer.lastTransaction = new Date().toISOString();
-                                const updateRequest = customersStore.put(customer);
-                                updateRequest.onsuccess = () => {
-                                    console.log(`✅ تم تحديث رصيد العميل: ${customer.balance}`);
-                                };
-                                updateRequest.onerror = (e) => {
-                                    console.error('❌ فشل تحديث رصيد العميل:', e.target.error);
-                                };
+                                customersStore.put(customer);
                             }
                         };
-                        
-                        customerRequest.onerror = (e) => {
-                            console.error('❌ فشل جلب بيانات العميل:', e.target.error);
-                        };
                     }
-                    
-                    // 4. تسجيل القيود المحاسبية مع حسابات العملاء الفردية
+
+                    // 4. تسجيل القيود المحاسبية الصحيحة
                     console.log('📒 تسجيل القيود المحاسبية...');
-                    recordAccountingEntriesInTransaction(invoice, invoiceId, transaction)
+                    recordFixedAccountingEntries(invoice, invoiceId, transaction)
                         .then(() => {
                             console.log('✅ تم تسجيل القيود المحاسبية');
                             
@@ -5793,18 +5991,11 @@
                                     customerId: customerId || null,
                                     customerName: invoice.customerName
                                 };
-                                const cashRequest = cashStore.add(cashTransaction);
-                                cashRequest.onsuccess = () => {
-                                    console.log('✅ تم تسجيل حركة الصندوق');
-                                };
-                                cashRequest.onerror = (e) => {
-                                    console.error('❌ فشل تسجيل حركة الصندوق:', e.target.error);
-                                };
+                                cashStore.add(cashTransaction);
                             }
                         })
                         .catch(error => {
                             console.error('❌ فشل تسجيل القيود المحاسبية:', error);
-                            reject(error);
                         });
                 };
                 
@@ -5815,9 +6006,549 @@
         }
 
         /**
+        * تسجيل القيود المحاسبية المحدّثة
+        */
+        async function recordFixedAccountingEntries(invoice, invoiceId, transaction) {
+            return new Promise((resolve, reject) => {
+                const journalStore = transaction.objectStore('journalEntries');
+                const coaStore = transaction.objectStore('chartOfAccounts');
+
+                // حسابات العملاء النقدية
+                const customerAccountCode = invoice.customerAccount || '1040000';
+                
+                // قيد الإيرادات (البيع)
+                const revenueDebits = invoice.paymentMethod === 'cash' 
+                    ? [{ accountCode: '1010', amount: invoice.total, description: `الصندوق - فاتورة مبيعات ${invoice.invoiceNumber}` }]
+                    : [{ accountCode: customerAccountCode, amount: invoice.total, description: `العميل - فاتورة مبيعات آجلة ${invoice.invoiceNumber}` }];
+
+                const revenueCredits = [
+                    { accountCode: '3010', amount: invoice.subtotal, description: `إيرادات المبيعات - فاتورة ${invoice.invoiceNumber}` }
+                ];
+
+                // إضافة الضريبة إذا وجدت
+                if (invoice.tax > 0) {
+                    revenueCredits.push({ 
+                        accountCode: '4020', 
+                        amount: invoice.tax, 
+                        description: `ضريبة المبيعات - فاتورة ${invoice.invoiceNumber}` 
+                    });
+                }
+
+                // التحقق من التوازن
+                const totalDebit = revenueDebits.reduce((sum, d) => sum + d.amount, 0);
+                const totalCredit = revenueCredits.reduce((sum, c) => sum + c.amount, 0);
+                
+                if (Math.abs(totalDebit - totalCredit) > 0.01) {
+                    reject(new Error('القيد غير متوازن'));
+                    return;
+                }
+
+                // إنشاء قيد الإيرادات
+                const revenueEntry = {
+                    date: new Date().toISOString(),
+                    description: `إيرادات مبيعات ${invoice.invoiceNumber} - ${invoice.paymentMethod === 'credit' ? 'آجل' : 'نقدي'} - ${invoice.customerName}`,
+                    debits: revenueDebits,
+                    credits: revenueCredits,
+                    refType: 'SaleRevenue',
+                    refId: invoiceId,
+                    balanced: true,
+                    totalAmount: invoice.total,
+                    createdAt: new Date().toISOString()
+                };
+
+                // حفظ قيد الإيرادات
+                const revenueRequest = journalStore.add(revenueEntry);
+                
+                revenueRequest.onsuccess = () => {
+                    // قيد تكلفة البضاعة المباعة إذا كانت موجودة
+                    if (invoice.cogsAmount > 0) {
+                        const cogsEntry = {
+                            date: new Date().toISOString(),
+                            description: `تكلفة البضاعة المباعة - فاتورة ${invoice.invoiceNumber}`,
+                            debits: [{ 
+                                accountCode: '3020',
+                                amount: invoice.cogsAmount,
+                                description: `تكلفة البضاعة المباعة - فاتورة ${invoice.invoiceNumber}`
+                            }],
+                            credits: [{ 
+                                accountCode: '1030',
+                                amount: invoice.cogsAmount,
+                                description: `تخفيض المخزون - فاتورة ${invoice.invoiceNumber}`
+                            }],
+                            refType: 'COGS',
+                            refId: invoiceId,
+                            balanced: true,
+                            totalAmount: invoice.cogsAmount,
+                            createdAt: new Date().toISOString()
+                        };
+
+                        const cogsRequest = journalStore.add(cogsEntry);
+                        
+                        cogsRequest.onsuccess = () => {
+                            console.log('✅ تم تسجيل جميع القيود المحاسبية الصحيحة');
+                            resolve();
+                        };
+                        
+                        cogsRequest.onerror = (e) => {
+                            console.error('فشل تسجيل قيد COGS:', e.target.error);
+                            reject(e.target.error);
+                        };
+                    } else {
+                        resolve();
+                    }
+                };
+                
+                revenueRequest.onerror = (e) => {
+                    console.error('فشل تسجيل قيد الإيرادات:', e.target.error);
+                    reject(e.target.error);
+                };
+            });
+        }
+
+        // ==================== إصلاح دالة حفظ فاتورة الشراء ====================
+
+        /**
+        * حفظ فاتورة الشراء المحدّثة
+        */
+        async function savePurchaseInvoiceFixed() {
+            const form = document.getElementById('purchaseForm');
+
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            try {
+                // جمع عناصر الفاتورة
+                const purchaseItems = [];
+                let totalCost = 0;
+
+                document.querySelectorAll('.purchase-item').forEach(item => {
+                    const productSelect = item.querySelector('.product-select');
+                    const quantityInput = item.querySelector('.quantity-input');
+                    const priceInput = item.querySelector('.price-input');
+
+                    if (productSelect.value && quantityInput.value && priceInput.value) {
+                        const quantity = parseInt(quantityInput.value);
+                        const price = parseFloat(priceInput.value);
+                        const productId = productSelect.value;
+                        const productName = productSelect.options[productSelect.selectedIndex].text;
+
+                        const itemTotal = quantity * price;
+                        totalCost += itemTotal;
+
+                        purchaseItems.push({
+                            productId: parseInt(productId),
+                            productName: productName,
+                            quantity: quantity,
+                            price: price,
+                            total: itemTotal
+                        });
+                    }
+                });
+
+                if (purchaseItems.length === 0) {
+                    alert('يرجى إضافة منتجات على الأقل');
+                    return;
+                }
+
+                // الحصول على بيانات المورد
+                const supplierId = document.getElementById('purchaseSupplier').value;
+                const supplierSelect = document.getElementById('purchaseSupplier');
+                const supplierName = supplierSelect.options[supplierSelect.selectedIndex]?.text || 'مورد غير معروف';
+                const paymentMethod = document.getElementById('purchasePaymentMethod').value;
+                
+                // حساب الإجماليات
+                const taxRate = parseFloat(document.getElementById('purchaseTaxRate').value) || 0;
+                const taxAmount = totalCost * (taxRate / 100);
+                const total = totalCost + taxAmount;
+
+                const purchaseInvoice = {
+                    invoiceNumber: document.getElementById('purchaseInvoiceNumber').value || `PUR-${Date.now()}`,
+                    supplierId: parseInt(supplierId),
+                    supplierName: supplierName,
+                    date: document.getElementById('purchaseDate').value,
+                    items: purchaseItems,
+                    subtotal: totalCost,
+                    tax: taxAmount,
+                    taxRate: taxRate,
+                    total: total,
+                    paymentMethod: paymentMethod,
+                    currency: 'YER',
+                    notes: document.getElementById('purchaseNotes').value,
+                    createdAt: new Date().toISOString(),
+                    status: 'completed'
+                };
+
+                // تنفيذ معاملة الشراء
+                await executePurchaseTransactionFixed(purchaseInvoice, purchaseItems);
+
+                // إغلاق النموذج وتحديث الواجهات
+                const modal = bootstrap.Modal.getInstance(document.getElementById('purchaseModal'));
+                modal.hide();
+
+                updateBalance();
+                displayChartOfAccounts();
+                loadProductsTable();
+                loadProductsForPOS();
+                loadPurchasesTable();
+
+                alert('✅ تم حفظ فاتورة الشراء بنجاح مع جميع الإصلاحات!');
+
+            } catch (error) {
+                console.error('❌ فشل حفظ فاتورة الشراء:', error);
+                alert(`❌ فشل حفظ فاتورة الشراء: ${error.message}`);
+            }
+        }
+
+        /**
+        * تنفيذ معاملة الشراء المحدّثة
+        */
+        function executePurchaseTransactionFixed(purchase, purchaseItems) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([
+                    'purchaseInvoices', 
+                    'products', 
+                    'suppliers',
+                    'cashTransactions',
+                    'journalEntries',
+                    'chartOfAccounts'
+                ], 'readwrite');
+
+                transaction.onerror = (e) => {
+                    console.error('❌ خطأ في معاملة الشراء:', e.target.error);
+                    reject(new Error(`فشل في معاملة قاعدة البيانات: ${e.target.error}`));
+                };
+
+                transaction.oncomplete = () => {
+                    console.log('✅ اكتملت معاملة الشراء بنجاح');
+                    resolve();
+                };
+
+                const purchaseStore = transaction.objectStore('purchaseInvoices');
+                const productsStore = transaction.objectStore('products');
+                const suppliersStore = transaction.objectStore('suppliers');
+                const cashStore = transaction.objectStore('cashTransactions');
+                const journalStore = transaction.objectStore('journalEntries');
+                const coaStore = transaction.objectStore('chartOfAccounts');
+
+                // 1. تحديث كميات المنتجات
+                console.log('🔄 تحديث كميات المنتجات...');
+                for (const item of purchaseItems) {
+                    const productRequest = productsStore.get(item.productId);
+                    productRequest.onsuccess = (e) => {
+                        const product = e.target.result;
+                        if (product) {
+                            product.quantity += item.quantity;
+                            product.purchasePrice = item.price; // تحديث سعر الشراء
+                            product.lastPurchased = new Date().toISOString();
+                            productsStore.put(product);
+                        }
+                    };
+                }
+
+                // 2. حفظ فاتورة الشراء
+                console.log('💾 حفظ فاتورة الشراء...');
+                const purchaseRequest = purchaseStore.add(purchase);
+
+                purchaseRequest.onsuccess = (e) => {
+                    const purchaseId = e.target.result;
+
+                    // 3. تحديث رصيد المورد في الشراء الآجل
+                    if (purchase.paymentMethod === 'credit' && purchase.supplierId) {
+                        console.log('🏢 تحديث رصيد المورد...');
+                        const supplierRequest = suppliersStore.get(purchase.supplierId);
+                        
+                        supplierRequest.onsuccess = (e) => {
+                            const supplier = e.target.result;
+                            if (supplier) {
+                                supplier.balance = (supplier.balance || 0) + purchase.total;
+                                supplier.lastTransaction = new Date().toISOString();
+                                suppliersStore.put(supplier);
+                            }
+                        };
+                    }
+
+                    // 4. تسجيل القيود المحاسبية للشراء
+                    console.log('📒 تسجيل القيود المحاسبية للشراء...');
+                    recordPurchaseAccountingEntriesFixed(purchase, purchaseId, transaction)
+                        .then(() => {
+                            console.log('✅ تم تسجيل قيود الشراء المحاسبية');
+                            
+                            // 5. تسجيل حركة الصندوق للشراء النقدي
+                            if (purchase.paymentMethod === 'cash') {
+                                console.log('💵 تسجيل حركة الصندوق للشراء...');
+                                const cashTransaction = {
+                                    date: new Date().toISOString(),
+                                    type: 'Purchase',
+                                    amount: -purchase.total,
+                                    reference: `فاتورة شراء ${purchase.invoiceNumber}`,
+                                    invoiceId: purchaseId,
+                                    supplierId: purchase.supplierId,
+                                    supplierName: purchase.supplierName
+                                };
+                                cashStore.add(cashTransaction);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('❌ فشل تسجيل قيود الشراء:', error);
+                        });
+                };
+            });
+        }
+
+        /**
+        * تسجيل القيود المحاسبية للشراء المحدّثة
+        */
+        async function recordPurchaseAccountingEntriesFixed(purchase, purchaseId, transaction) {
+            return new Promise((resolve, reject) => {
+                const journalStore = transaction.objectStore('journalEntries');
+                
+                // حسابات الموردين
+                const supplierAccountCode = '2010000';
+                
+                // قيد المشتريات
+                const purchaseDebits = [
+                    { accountCode: '1030', amount: purchase.subtotal, description: `المخزون - فاتورة شراء ${purchase.invoiceNumber}` }
+                ];
+                
+                // إضافة الضريبة إذا وجدت
+                if (purchase.tax > 0) {
+                    purchaseDebits.push({ 
+                        accountCode: '4010', 
+                        amount: purchase.tax, 
+                        description: `ضريبة قابلة للخصم - فاتورة شراء ${purchase.invoiceNumber}` 
+                    });
+                }
+                
+                const purchaseCredits = purchase.paymentMethod === 'cash' 
+                    ? [{ accountCode: '1010', amount: purchase.total, description: `الصندوق - فاتورة شراء ${purchase.invoiceNumber}` }]
+                    : [{ accountCode: supplierAccountCode, amount: purchase.total, description: `المورد - فاتورة شراء آجلة ${purchase.invoiceNumber}` }];
+
+                // التحقق من التوازن
+                const totalDebit = purchaseDebits.reduce((sum, d) => sum + d.amount, 0);
+                const totalCredit = purchaseCredits.reduce((sum, c) => sum + c.amount, 0);
+                
+                if (Math.abs(totalDebit - totalCredit) > 0.01) {
+                    reject(new Error('قيد الشراء غير متوازن'));
+                    return;
+                }
+
+                // إنشاء قيد المشتريات
+                const purchaseEntry = {
+                    date: new Date().toISOString(),
+                    description: `مشتريات ${purchase.invoiceNumber} - ${purchase.paymentMethod === 'credit' ? 'آجل' : 'نقدي'} - ${purchase.supplierName}`,
+                    debits: purchaseDebits,
+                    credits: purchaseCredits,
+                    refType: 'Purchase',
+                    refId: purchaseId,
+                    balanced: true,
+                    totalAmount: purchase.total,
+                    createdAt: new Date().toISOString()
+                };
+
+                const request = journalStore.add(purchaseEntry);
+                
+                request.onsuccess = () => {
+                    console.log('✅ تم تسجيل قيد المشتريات الصحيح');
+                    resolve();
+                };
+                
+                request.onerror = (e) => {
+                    console.error('فشل تسجيل قيد المشتريات:', e.target.error);
+                    reject(e.target.error);
+                };
+            });
+        }
+
+        // ==================== دوال التحقق والتسوية المحدّثة ====================
+
+        /**
+        * التحقق من توازن القيود المحاسبية
+        */
+        function validateJournalEntryBalance(debits, credits) {
+            const totalDebits = debits.reduce((sum, item) => sum + item.amount, 0);
+            const totalCredits = credits.reduce((sum, item) => sum + item.amount, 0);
+            const difference = Math.abs(totalDebits - totalCredits);
+
+            if (difference > 0.01) {
+                throw new Error(`القيد غير متوازن. المدين: ${totalDebits.toFixed(2)}، الدائن: ${totalCredits.toFixed(2)}، الفرق: ${difference.toFixed(2)}`);
+            }
+
+            return true;
+        }
+
+        /**
+        * تسوية الحسابات الضريبية
+        */
+        async function reconcileTaxAccounts() {
+            try {
+                // جلب جميع قيود الضريبة
+                const journalEntries = await new Promise((resolve, reject) => {
+                    const transaction = db.transaction(['journalEntries'], 'readonly');
+                    const store = transaction.objectStore('journalEntries');
+                    const request = store.getAll();
+                    
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (e) => reject(e.target.error);
+                });
+
+                // حساب إجمالي الضريبة المستحقة القبض والمدفوعة
+                let taxReceivable = 0;
+                let taxPayable = 0;
+
+                journalEntries.forEach(entry => {
+                    entry.debits.forEach(debit => {
+                        if (debit.accountCode === '4020') {
+                            taxReceivable += debit.amount;
+                        }
+                    });
+                    entry.credits.forEach(credit => {
+                        if (credit.accountCode === '4020') {
+                            taxPayable += credit.amount;
+                        }
+                    });
+                });
+
+                const netTaxPosition = taxReceivable - taxPayable;
+                
+                console.log(`📊 موقف الضريبة الصافي: ${netTaxPosition.toFixed(2)} ريال`);
+                console.log(`💰 الضريبة المستحقة القبض: ${taxReceivable.toFixed(2)} ريال`);
+                console.log(`💸 الضريبة المستحقة الدفع: ${taxPayable.toFixed(2)} ريال`);
+
+                return {
+                    taxReceivable,
+                    taxPayable,
+                    netTaxPosition
+                };
+
+            } catch (error) {
+                console.error('فشل تسوية الحسابات الضريبية:', error);
+                throw error;
+            }
+        }
+
+        // ==================== دوال التصدير والتقارير المحدّثة ====================
+
+        /**
+        * إنشاء تقرير محاسبي شامل
+        */
+        async function generateComprehensiveAccountingReport() {
+            try {
+                const reportData = await gatherAccountingReportData();
+                const report = formatAccountingReport(reportData);
+                
+                console.log('📊 تم إنشاء التقرير المحاسبي الشامل');
+                return report;
+                
+            } catch (error) {
+                console.error('فشل إنشاء التقرير المحاسبي:', error);
+                throw error;
+            }
+        }
+
+        /**
+        * جمع بيانات التقرير المحاسبي
+        */
+        async function gatherAccountingReportData() {
+            const [journalEntries, accounts, invoices, purchases] = await Promise.all([
+                new Promise((resolve, reject) => {
+                    const transaction = db.transaction(['journalEntries'], 'readonly');
+                    const store = transaction.objectStore('journalEntries');
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (e) => reject(e.target.error);
+                }),
+                new Promise((resolve, reject) => {
+                    const transaction = db.transaction(['chartOfAccounts'], 'readonly');
+                    const store = transaction.objectStore('chartOfAccounts');
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (e) => reject(e.target.error);
+                }),
+                getAllInvoices(),
+                new Promise((resolve, reject) => {
+                    const transaction = db.transaction(['purchaseInvoices'], 'readonly');
+                    const store = transaction.objectStore('purchaseInvoices');
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (e) => reject(e.target.error);
+                })
+            ]);
+
+            // حساب الإجماليات
+            const totalRevenue = invoices.reduce((sum, inv) => sum + inv.subtotal, 0);
+            const totalTaxCollected = invoices.reduce((sum, inv) => sum + (inv.tax || 0), 0);
+            
+            let totalCOGS = 0;
+            invoices.forEach(inv => {
+                if (inv.items) {
+                    inv.items.forEach(item => {
+                        totalCOGS += (item.purchasePrice || 0) * item.quantity;
+                    });
+                }
+            });
+            
+            const grossProfit = totalRevenue - totalCOGS;
+            const netProfit = grossProfit - totalTaxCollected;
+
+            const totalPurchases = purchases.reduce((sum, pur) => sum + pur.subtotal, 0);
+            const totalTaxPaid = purchases.reduce((sum, pur) => sum + (pur.tax || 0), 0);
+
+            return {
+                summary: {
+                    totalRevenue,
+                    totalCOGS,
+                    grossProfit,
+                    totalTaxCollected,
+                    netProfit,
+                    totalPurchases,
+                    totalTaxPaid
+                },
+                accounts: accounts.map(acc => ({
+                    code: acc.code,
+                    name: acc.name,
+                    balance: acc.balance || 0,
+                    type: acc.type
+                })),
+                transactions: journalEntries.slice(-50).map(entry => ({
+                    date: entry.date,
+                    description: entry.description,
+                    debits: entry.debits,
+                    credits: entry.credits,
+                    totalAmount: entry.totalAmount
+                }))
+            };
+        }
+
+        /**
+        * تنسيق التقرير المحاسبي
+        */
+        function formatAccountingReport(data) {
+            let report = `📊 التقرير المحاسبي الشامل\n`;
+            report += `📅 ${new Date().toLocaleDateString('ar-YE')}\n\n`;
+            
+            report += `📈 ملخص الأداء المالي:\n`;
+            report += `💰 إجمالي الإيرادات: ${data.summary.totalRevenue.toFixed(2)} ريال\n`;
+            report += `📦 تكلفة البضاعة المباعة: ${data.summary.totalCOGS.toFixed(2)} ريال\n`;
+            report += `📈 الربح الإجمالي: ${data.summary.grossProfit.toFixed(2)} ريال\n`;
+            report += `🧾 الضريبة المحصلة: ${data.summary.totalTaxCollected.toFixed(2)} ريال\n`;
+            report += `💸 إجمالي المشتريات: ${data.summary.totalPurchases.toFixed(2)} ريال\n`;
+            report += `🧾 الضريبة المدفوعة: ${data.summary.totalTaxPaid.toFixed(2)} ريال\n`;
+            report += `💵 صافي الربح: ${data.summary.netProfit.toFixed(2)} ريال\n\n`;
+            
+            report += `📋 أرصدة الحسابات الرئيسية:\n`;
+            data.accounts.filter(acc => acc.balance !== 0).forEach(account => {
+                report += `${account.code} - ${account.name}: ${account.balance.toFixed(2)} ريال\n`;
+            });
+            
+            return report;
+        }
+
+        /**
         * تسوية ضريبة المبيعات - الإصدار المصحح
         */
-        async function recordSalesTaxReconciliation(invoice, invoiceId, transaction) {
+        async function recordSalesTaxReconicliation(invoice, invoiceId, transaction) {
             return new Promise((resolve, reject) => {
                 const journalStore = transaction.objectStore('journalEntries');
                 const coaStore = transaction.objectStore('chartOfAccounts');
@@ -5951,208 +6682,7 @@
             });
         }
 
-        /**
-        * تسجيل القيود المحاسبية داخل المعاملة - الإصدار المصحح
-        */
-        async function recordAccountingEntriesInTransaction(invoice, invoiceId, transaction) {
-            return new Promise((resolve, reject) => {
-                console.log('🎯 بدء تسجيل القيود المحاسبية المصححة للبيع...');
-                
-                const journalStore = transaction.objectStore('journalEntries');
-                const coaStore = transaction.objectStore('chartOfAccounts');
-                
-                const customerAccountCode = invoice.customerAccount || '1040000';
-                
-                console.log('🔍 استخدام حساب العميل:', customerAccountCode);
-                
-                // حساب الضريبة والإجماليات
-                const taxAmount = invoice.tax || 0;
-                const subtotal = invoice.subtotal;
-                const total = invoice.total;
-                const netRevenue = subtotal; // الإيراد الصافي قبل الضريبة
-                
-                console.log('🧮 الحسابات:', { 
-                    subtotal, 
-                    taxAmount, 
-                    total,
-                    netRevenue 
-                });
 
-                // ✅ القيد 1: إيرادات المبيعات والضريبة
-                const revenueDebits = [];
-                const revenueCredits = [];
-                
-                if (invoice.paymentMethod === 'cash') {
-                    // 🔥 البيع النقدي: الصندوق (مدين) ← الإيرادات + الضريبة (دائن)
-                    revenueDebits.push({ 
-                        accountCode: '1010', // الصندوق
-                        amount: total,
-                        description: `مقبوضات بيع نقدي - ${invoice.customerName} - فاتورة ${invoice.invoiceNumber}`
-                    });
-                } else {
-                    // 🔥 البيع الآجل: العميل (مدين) ← الإيرادات + الضريبة (دائن)
-                    revenueDebits.push({ 
-                        accountCode: customerAccountCode, // حساب العميل الفردي
-                        amount: total,
-                        description: `ذمم عملاء آجلة - ${invoice.customerName} - فاتورة ${invoice.invoiceNumber}`
-                    });
-                }
-                
-                // الدائن: إيرادات المبيعات (صافي)
-                revenueCredits.push({ 
-                    accountCode: '3010', // المبيعات
-                    amount: netRevenue,
-                    description: `إيرادات مبيعات - فاتورة ${invoice.invoiceNumber}`
-                });
-                
-                // الدائن: الضريبة المستحقة (إذا وجدت)
-                if (taxAmount > 0) {
-                    revenueCredits.push({ 
-                        accountCode: '4020', // ضريبة القيمة المضافة المستحقة
-                        amount: taxAmount,
-                        description: `ضريبة مبيعات مستحقة - فاتورة ${invoice.invoiceNumber}`
-                    });
-                }
-                
-                console.log('📒 القيد 1 - إيرادات المبيعات:');
-                console.log('المدين:', revenueDebits);
-                console.log('الدائن:', revenueCredits);
-                
-                // التحقق من التوازن
-                const totalRevenueDebit = revenueDebits.reduce((sum, d) => sum + d.amount, 0);
-                const totalRevenueCredit = revenueCredits.reduce((sum, c) => sum + c.amount, 0);
-                const revenueDifference = Math.abs(totalRevenueDebit - totalRevenueCredit);
-                
-                console.log('⚖️ التحقق من توازن قيد الإيرادات:', {
-                    'مجموع المدين': totalRevenueDebit,
-                    'مجموع الدائن': totalRevenueCredit,
-                    'الفرق': revenueDifference
-                });
-                
-                if (revenueDifference > 0.01) {
-                    const error = new Error(`قيد الإيرادات غير متوازن! المدين: ${totalRevenueDebit}, الدائن: ${totalRevenueCredit}`);
-                    console.error('❌', error.message);
-                    reject(error);
-                    return;
-                }
-                
-                // تسجيل قيد الإيرادات
-                const revenueEntry = {
-                    date: new Date().toISOString(),
-                    description: `إيرادات مبيعات ${invoice.invoiceNumber} - ${invoice.paymentMethod === 'credit' ? 'آجل' : 'نقدي'} - ${invoice.customerName}`,
-                    debits: revenueDebits,
-                    credits: revenueCredits,
-                    refType: 'SaleRevenue',
-                    refId: invoiceId,
-                    balanced: true,
-                    totalAmount: total,
-                    createdAt: new Date().toISOString(),
-                    auditInfo: {
-                        userId: 'system',
-                        timestamp: new Date().toISOString(),
-                        ipAddress: 'localhost',
-                        sessionId: 'sales-process'
-                    }
-                };
-                
-                console.log('💾 حفظ قيد الإيرادات:', revenueEntry);
-                
-                const revenueRequest = journalStore.add(revenueEntry);
-                
-                revenueRequest.onsuccess = () => {
-                    console.log('✅ تم تسجيل قيد الإيرادات بنجاح');
-                    
-                    // ✅ القيد 2: تكلفة البضاعة المباعة (COGS)
-                    const cogsAmount = invoice.costOfGoods || 0;
-                    
-                    if (cogsAmount > 0) {
-                        console.log('📦 تسجيل قيد تكلفة البضاعة المباعة...');
-                        
-                        const cogsEntry = {
-                            date: new Date().toISOString(),
-                            description: `تكلفة بضاعة مباعة - فاتورة ${invoice.invoiceNumber}`,
-                            debits: [{ 
-                                accountCode: '3020', // تكلفة البضاعة المباعة
-                                amount: cogsAmount,
-                                description: `تكلفة البضاعة المباعة - ${invoice.invoiceNumber}`
-                            }],
-                            credits: [{ 
-                                accountCode: '1030', // المخزون
-                                amount: cogsAmount,
-                                description: `تخفيض المخزون - فاتورة ${invoice.invoiceNumber}`
-                            }],
-                            refType: 'COGS',
-                            refId: invoiceId,
-                            balanced: true,
-                            totalAmount: cogsAmount,
-                            createdAt: new Date().toISOString(),
-                            auditInfo: {
-                                userId: 'system',
-                                timestamp: new Date().toISOString(),
-                                ipAddress: 'localhost',
-                                sessionId: 'sales-process'
-                            }
-                        };
-                        
-                        const cogsRequest = journalStore.add(cogsEntry);
-                        
-                        cogsRequest.onsuccess = () => {
-                            console.log('✅ تم تسجيل قيد التكلفة');
-                            
-                            // تحديث أرصدة الحسابات للإيرادات والتكلفة
-                            updateAccountBalances(revenueDebits, revenueCredits, coaStore)
-                                .then(() => {
-                                    console.log('✅ تم تحديث أرصدة حسابات الإيرادات');
-                                    return updateAccountBalances(
-                                        [{ accountCode: '3020', amount: cogsAmount }],
-                                        [{ accountCode: '1030', amount: cogsAmount }],
-                                        coaStore
-                                    );
-                                })
-                                .then(() => {
-                                    console.log('✅ تم تحديث أرصدة حسابات التكلفة');
-                                    
-                                    // ✅ القيد 3: تسوية ضريبة المبيعات (إذا وجدت)
-                                    if (taxAmount > 0) {
-                                        return recordSalesTaxReconciliation(invoice, invoiceId, transaction);
-                                    } else {
-                                        resolve();
-                                    }
-                                })
-                                .then(() => {
-                                    console.log('✅ اكتملت جميع القيود المحاسبية للبيع');
-                                    resolve();
-                                })
-                                .catch(reject);
-                        };
-                        
-                        cogsRequest.onerror = (e) => {
-                            reject(new Error(`فشل تسجيل قيد التكلفة: ${e.target.error}`));
-                        };
-                    } else {
-                        // إذا لم توجد تكلفة، نحدث فقط حسابات الإيرادات
-                        updateAccountBalances(revenueDebits, revenueCredits, coaStore)
-                            .then(() => {
-                                console.log('✅ تم تحديث أرصدة حسابات الإيرادات');
-                                
-                                // تسوية الضريبة إذا وجدت
-                                if (taxAmount > 0) {
-                                    return recordSalesTaxReconciliation(invoice, invoiceId, transaction);
-                                } else {
-                                    resolve();
-                                }
-                            })
-                            .then(resolve)
-                            .catch(reject);
-                    }
-                };
-                
-                revenueRequest.onerror = (e) => {
-                    console.error('❌ فشل تسجيل قيد الإيرادات:', e.target.error);
-                    reject(new Error(`فشل تسجيل قيد الإيرادات: ${e.target.error}`));
-                };
-            });
-        }
 
         /**
         * تحديث أرصدة الحسابات
@@ -6542,132 +7072,6 @@
             }
         }
 
-        /**
-        * حفظ فاتورة الشراء مع النظام المحاسبي المتكامل - الإصدار المصحح
-        */
-        async function savePurchaseInvoice() {
-            const form = document.getElementById('purchaseForm');
-            
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
-            const purchaseItems = [];
-            let isValid = true;
-
-            // جمع عناصر الفاتورة مع التحقق
-            document.querySelectorAll('.purchase-item').forEach(item => {
-                const productSelect = item.querySelector('.product-select');
-                const quantityInput = item.querySelector('.quantity-input');
-                const priceInput = item.querySelector('.price-input');
-                
-                if (productSelect.value && quantityInput.value && priceInput.value) {
-                    const quantity = parseInt(quantityInput.value);
-                    const price = parseFloat(priceInput.value);
-                    
-                    if (quantity <= 0 || price <= 0) {
-                        isValid = false;
-                        alert('الكمية والسعر يجب أن يكونا أكبر من الصفر');
-                        return;
-                    }
-                    
-                    purchaseItems.push({
-                        productId: parseInt(productSelect.value),
-                        productName: productSelect.options[productSelect.selectedIndex].text,
-                        quantity: quantity,
-                        price: price,
-                        total: quantity * price
-                    });
-                } else {
-                    isValid = false;
-                }
-            });
-
-            if (!isValid || purchaseItems.length === 0) {
-                alert('يرجى تعبئة جميع حقول الأصناف بشكل صحيح');
-                return;
-            }
-
-            // الحصول على بيانات المورد وحسابه
-            const supplierId = parseInt(document.getElementById('purchaseSupplier').value);
-            let supplierAccountCode = '2010000'; // موردين نقديون افتراضي
-            let supplierName = 'مورد نقدي';
-            
-            if (supplierId) {
-                try {
-                    const supplier = await getSupplierById(supplierId);
-                    if (supplier && supplier.accCode) {
-                        supplierAccountCode = supplier.accCode;
-                        supplierName = supplier.name;
-                        console.log(`✅ استخدام حساب المورد الفردي: ${supplierAccountCode} - ${supplierName}`);
-                    }
-                } catch (error) {
-                    console.error('❌ خطأ في جلب بيانات المورد:', error);
-                }
-            }
-
-            // الحصول على إعدادات الضريبة والعملة
-            const taxRate = parseFloat(document.getElementById('purchaseTaxRate').value) || 0;
-            const currency = document.getElementById('purchaseCurrency').value;
-            const exchangeRate = parseFloat(document.getElementById('purchaseExchangeRate').value) || 1;
-            const purchaseUnit = document.getElementById('purchaseUnit').value;
-            
-            const subtotal = purchaseItems.reduce((sum, item) => sum + item.total, 0);
-            const taxAmount = subtotal * (taxRate / 100);
-            const total = subtotal + taxAmount;
-
-            const purchaseInvoice = {
-                supplierId: supplierId,
-                supplierName: supplierName,
-                supplierAccount: supplierAccountCode,
-                date: document.getElementById('purchaseDate').value,
-                paymentMethod: document.getElementById('purchasePaymentMethod').value,
-                invoiceNumber: document.getElementById('purchaseInvoiceNumber').value || `PUR-${Date.now()}`,
-                items: purchaseItems,
-                subtotal: subtotal,
-                tax: taxAmount,
-                taxRate: taxRate,
-                total: total,
-                currency: currency,
-                exchangeRate: exchangeRate,
-                purchaseUnit: purchaseUnit,
-                notes: document.getElementById('purchaseNotes').value,
-                createdAt: new Date().toISOString(),
-                status: 'completed'
-            };
-
-            // التحقق من صحة الإجمالي
-            const calculatedTotal = purchaseItems.reduce((sum, item) => sum + item.total, 0) + taxAmount;
-            if (Math.abs(purchaseInvoice.total - calculatedTotal) > 0.01) {
-                alert('إجمالي الفاتورة لا يتطابق مع مجموع الأصناف');
-                return;
-            }
-
-            try {
-                console.log('🚀 بدء عملية حفظ فاتورة الشراء مع النظام الجديد...');
-                
-                // تنفيذ جميع العمليات في معاملة واحدة
-                await executePurchaseTransaction(purchaseInvoice, purchaseItems);
-                
-                // إغلاق النموذج وتحديث الواجهات
-                const modal = bootstrap.Modal.getInstance(document.getElementById('purchaseModal'));
-                modal.hide();
-                
-                // تحديث جميع الواجهات
-                updateBalance();
-                displayChartOfAccounts();
-                loadProductsTable();
-                loadProductsForPOS();
-                loadPurchasesTable();
-                
-                alert('✅ تم حفظ فاتورة الشراء بنجاح وتحديث المخزون!');
-
-            } catch (error) {
-                console.error('❌ فشل حفظ فاتورة الشراء:', error);
-                alert(`❌ فشل حفظ فاتورة الشراء: ${error.message}`);
-            }
-        }
 
         /**
         * جلب بيانات المورد بواسطة المعرف
@@ -6681,322 +7085,6 @@
                 
                 request.onsuccess = () => resolve(request.result);
                 request.onerror = (e) => reject(e.target.error);
-            });
-        }
-
-        /**
-        * تنفيذ جميع عمليات فاتورة الشراء في معاملة واحدة
-        */
-        function executePurchaseTransaction(purchase, purchaseItems) {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([
-                    'purchaseInvoices', 
-                    'products', 
-                    'suppliers',
-                    'cashTransactions',
-                    'journalEntries',
-                    'chartOfAccounts'
-                ], 'readwrite');
-                
-                transaction.onerror = (e) => {
-                    console.error('❌ خطأ في معاملة الشراء:', e.target.error);
-                    reject(new Error(`فشل في معاملة قاعدة البيانات: ${e.target.error}`));
-                };
-                
-                transaction.oncomplete = () => {
-                    console.log('✅ اكتملت معاملة الشراء بنجاح');
-                    resolve();
-                };
-                
-                const purchaseStore = transaction.objectStore('purchaseInvoices');
-                const productsStore = transaction.objectStore('products');
-                const suppliersStore = transaction.objectStore('suppliers');
-                const cashStore = transaction.objectStore('cashTransactions');
-                const journalStore = transaction.objectStore('journalEntries');
-                const coaStore = transaction.objectStore('chartOfAccounts');
-
-                // 1. تحديث المنتجات أولاً
-                console.log('🔄 تحديث المنتجات...');
-                
-                for (const item of purchaseItems) {
-                    const productRequest = productsStore.get(item.productId);
-                    
-                    productRequest.onsuccess = (e) => {
-                        const product = e.target.result;
-                        if (product) {
-                            // ✅ حساب متوسط التكلفة المرجح بشكل صحيح
-                            const currentTotalValue = product.purchasePrice * product.quantity;
-                            const newTotalValue = item.price * item.quantity;
-                            const totalValue = currentTotalValue + newTotalValue;
-                            const totalQuantity = product.quantity + item.quantity;
-                            
-                            if (totalQuantity > 0) {
-                                product.purchasePrice = totalValue / totalQuantity; // المتوسط الصحيح
-                            } else {
-                                product.purchasePrice = item.price; // إذا كان المخزون صفر
-                            }
-                            
-                            product.quantity = totalQuantity;
-                            product.lastPurchased = new Date().toISOString();
-                            
-                            // إذا كانت وحدة الشراء "جملة"، تحديث سعر الجملة
-                            if (purchase.purchaseUnit === 'جملة') {
-                                product.wholesalePrice = item.price;
-                                // حساب سعر التجزئة تلقائياً إذا لم يكن محدداً
-                                if (!product.salePrice || product.salePrice < item.price * 1.1) {
-                                    product.salePrice = item.price * 1.3; // هامش ربح 30%
-                                }
-                            }
-                            
-                            const updateRequest = productsStore.put(product);
-                            updateRequest.onsuccess = () => {
-                                console.log(`✅ تم تحديث المنتج: ${product.name}, السعر: ${product.purchasePrice}, الكمية: ${product.quantity}`);
-                            };
-                            updateRequest.onerror = (e) => {
-                                console.error(`❌ فشل تحديث المنتج ${product.name}:`, e.target.error);
-                            };
-                            
-                        } else {
-                            // إضافة منتج جديد
-                            const newProduct = {
-                                code: `ITEM-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-                                name: item.productName,
-                                purchasePrice: item.price,
-                                salePrice: item.price * 1.3, // هامش ربح 30%
-                                wholesalePrice: purchase.purchaseUnit === 'جملة' ? item.price : 0,
-                                quantity: item.quantity,
-                                minQuantity: 5,
-                                categoryId: null,
-                                image: '📦',
-                                baseUnit: 'حبة',
-                                purchaseUnit: purchase.purchaseUnit,
-                                conversionFactor: 1,
-                                currency: purchase.currency,
-                                createdAt: new Date().toISOString()
-                            };
-                            
-                            const addRequest = productsStore.add(newProduct);
-                            addRequest.onsuccess = (e) => {
-                                console.log(`✅ تم إضافة المنتج الجديد: ${item.productName}`);
-                                // تحديث معرف المنتج للاستخدام لاحقاً
-                                item.productId = e.target.result;
-                            };
-                            addRequest.onerror = (e) => {
-                                console.error(`❌ فشل إضافة المنتج الجديد ${item.productName}:`, e.target.error);
-                            };
-                        }
-                    };
-                    
-                    productRequest.onerror = (e) => {
-                        console.error(`❌ فشل جلب المنتج:`, e.target.error);
-                    };
-                }
-
-                // 2. حفظ فاتورة الشراء
-                console.log('💾 حفظ فاتورة الشراء...');
-                const purchaseRequest = purchaseStore.add(purchase);
-                
-                purchaseRequest.onsuccess = (e) => {
-                    const purchaseId = e.target.result;
-                    console.log(`✅ تم حفظ فاتورة الشراء برقم: ${purchaseId}`);
-                    
-                    // 3. تسجيل القيود المحاسبية للشراء مع حسابات الموردين الفردية
-                    console.log('📒 تسجيل القيود المحاسبية للشراء...');
-                    recordPurchaseAccountingEntriesInTransaction(purchase, purchaseId, transaction)
-                        .then(() => {
-                            console.log('✅ تم تسجيل القيود المحاسبية للشراء');
-                            
-                            // 4. تسجيل حركة الصندوق إذا كانت نقدية
-                            if (purchase.paymentMethod === 'cash') {
-                                console.log('💵 تسجيل حركة الصندوق للشراء...');
-                                const cashTransaction = {
-                                    date: purchase.date,
-                                    type: 'Purchase',
-                                    amount: -purchase.total,
-                                    reference: `فاتورة شراء ${purchase.invoiceNumber}`,
-                                    purchaseId: purchaseId,
-                                    supplierId: purchase.supplierId,
-                                    supplierName: purchase.supplierName
-                                };
-                                const cashRequest = cashStore.add(cashTransaction);
-                                cashRequest.onsuccess = () => {
-                                    console.log('✅ تم تسجيل حركة الصندوق للشراء');
-                                };
-                                cashRequest.onerror = (e) => {
-                                    console.error('❌ فشل تسجيل حركة الصندوق:', e.target.error);
-                                };
-                            }
-                            
-                            // 5. تحديث رصيد المورد إذا كانت آجلة
-                            if (purchase.paymentMethod === 'credit' && purchase.supplierId) {
-                                console.log('👥 تحديث رصيد المورد...');
-                                const supplierRequest = suppliersStore.get(purchase.supplierId);
-                                
-                                supplierRequest.onsuccess = (e) => {
-                                    const supplier = e.target.result;
-                                    if (supplier) {
-                                        supplier.balance = (supplier.balance || 0) + purchase.total;
-                                        supplier.lastTransaction = new Date().toISOString();
-                                        const updateRequest = suppliersStore.put(supplier);
-                                        updateRequest.onsuccess = () => {
-                                            console.log(`✅ تم تحديث رصيد المورد: ${supplier.balance}`);
-                                        };
-                                        updateRequest.onerror = (e) => {
-                                            console.error('❌ فشل تحديث رصيد المورد:', e.target.error);
-                                        };
-                                    }
-                                };
-                                
-                                supplierRequest.onerror = (e) => {
-                                    console.error('❌ فشل جلب بيانات المورد:', e.target.error);
-                                };
-                            }
-                        })
-                        .catch(error => {
-                            console.error('❌ فشل تسجيل القيود المحاسبية للشراء:', error);
-                            reject(error);
-                        });
-                };
-                
-                purchaseRequest.onerror = (e) => {
-                    reject(new Error(`فشل حفظ فاتورة الشراء: ${e.target.error}`));
-                };
-            });
-        }
-
-        /**
-        * تسجيل القيود المحاسبية للشراء داخل المعاملة - الإصدار المصحح
-        */
-        async function recordPurchaseAccountingEntriesInTransaction(purchase, purchaseId, transaction) {
-            return new Promise((resolve, reject) => {
-                console.log('🎯 بدء تسجيل القيود المحاسبية المصححة للشراء...');
-                
-                const journalStore = transaction.objectStore('journalEntries');
-                const coaStore = transaction.objectStore('chartOfAccounts');
-                
-                const supplierAccountCode = purchase.supplierAccount || '2010000';
-                
-                console.log('🔍 استخدام حساب المورد:', supplierAccountCode);
-                
-                // حساب الضريبة والإجماليات
-                const taxAmount = purchase.tax || 0;
-                const subtotal = purchase.subtotal;
-                const total = purchase.total;
-                const netPurchase = subtotal; // المشتريات الصافية قبل الضريبة
-                
-                console.log('🧮 حسابات الشراء:', { 
-                    subtotal, 
-                    taxAmount, 
-                    total,
-                    netPurchase 
-                });
-
-                // ✅ القيد 1: المشتريات والضريبة
-                const purchaseDebits = [];
-                const purchaseCredits = [];
-                
-                // المدين: المخزون (القيمة الصافية)
-                purchaseDebits.push({ 
-                    accountCode: '1030', // المخزون
-                    amount: netPurchase,
-                    description: `زيادة المخزون من الشراء - ${purchase.supplierName} - فاتورة ${purchase.invoiceNumber}`
-                });
-                
-                // المدين: ضريبة المدخلات (إذا وجدت)
-                if (taxAmount > 0) {
-                    purchaseDebits.push({ 
-                        accountCode: '4010', // ضريبة القيمة المضافة القابلة للخصم
-                        amount: taxAmount,
-                        description: `ضريبة مدخلات - ${purchase.supplierName} - فاتورة ${purchase.invoiceNumber}`
-                    });
-                }
-                
-                if (purchase.paymentMethod === 'cash') {
-                    // 🔥 الشراء النقدي: المخزون + الضريبة (مدين) ← الصندوق (دائن)
-                    purchaseCredits.push({ 
-                        accountCode: '1010', // الصندوق
-                        amount: total,
-                        description: `مصاريف نقدية للشراء - ${purchase.supplierName} - فاتورة ${purchase.invoiceNumber}`
-                    });
-                } else {
-                    // 🔥 الشراء الآجل: المخزون + الضريبة (مدين) ← الموردين (دائن)
-                    purchaseCredits.push({ 
-                        accountCode: supplierAccountCode, // حساب المورد الفردي
-                        amount: total,
-                        description: `ذمم موردين آجلة - ${purchase.supplierName} - فاتورة ${purchase.invoiceNumber}`
-                    });
-                }
-                
-                console.log('📒 القيد 1 - المشتريات:');
-                console.log('المدين:', purchaseDebits);
-                console.log('الدائن:', purchaseCredits);
-                
-                // التحقق من التوازن
-                const totalPurchaseDebit = purchaseDebits.reduce((sum, d) => sum + d.amount, 0);
-                const totalPurchaseCredit = purchaseCredits.reduce((sum, c) => sum + c.amount, 0);
-                const purchaseDifference = Math.abs(totalPurchaseDebit - totalPurchaseCredit);
-                
-                console.log('⚖️ التحقق من توازن قيد المشتريات:', {
-                    'مجموع المدين': totalPurchaseDebit,
-                    'مجموع الدائن': totalPurchaseCredit,
-                    'الفرق': purchaseDifference
-                });
-                
-                if (purchaseDifference > 0.01) {
-                    const error = new Error(`قيد المشتريات غير متوازن! المدين: ${totalPurchaseDebit}, الدائن: ${totalPurchaseCredit}`);
-                    console.error('❌', error.message);
-                    reject(error);
-                    return;
-                }
-                
-                const purchaseEntry = {
-                    date: new Date().toISOString(),
-                    description: `مشتريات ${purchase.invoiceNumber} - ${purchase.paymentMethod === 'credit' ? 'آجل' : 'نقدي'} - ${purchase.supplierName}`,
-                    debits: purchaseDebits,
-                    credits: purchaseCredits,
-                    refType: 'Purchase',
-                    refId: purchaseId,
-                    balanced: true,
-                    totalAmount: total,
-                    createdAt: new Date().toISOString(),
-                    auditInfo: {
-                        userId: 'system',
-                        timestamp: new Date().toISOString(),
-                        ipAddress: 'localhost',
-                        sessionId: 'purchase-process'
-                    }
-                };
-                
-                console.log('💾 حفظ قيد الشراء:', purchaseEntry);
-                
-                const purchaseRequest = journalStore.add(purchaseEntry);
-                
-                purchaseRequest.onsuccess = () => {
-                    console.log('✅ تم تسجيل قيد الشراء بنجاح');
-                    
-                    // تحديث أرصدة الحسابات
-                    updateAccountBalances(purchaseDebits, purchaseCredits, coaStore)
-                        .then(() => {
-                            console.log('✅ تم تحديث أرصدة حسابات الشراء');
-                            
-                            // ✅ القيد 2: تسوية ضريبة المشتريات (إذا وجدت)
-                            if (taxAmount > 0) {
-                                return recordPurchaseTaxReconciliation(purchase, purchaseId, transaction);
-                            } else {
-                                resolve();
-                            }
-                        })
-                        .then(() => {
-                            console.log('✅ اكتملت جميع القيود المحاسبية للشراء');
-                            resolve();
-                        })
-                        .catch(reject);
-                };
-                
-                purchaseRequest.onerror = (e) => {
-                    console.error('❌ فشل تسجيل قيد الشراء:', e.target.error);
-                    reject(new Error(`فشل تسجيل قيد الشراء: ${e.target.error}`));
-                };
             });
         }
 
@@ -8141,7 +8229,41 @@
             const amountInput = newEntry.querySelector('.credit-amount');
             amountInput.addEventListener('input', calculateJournalEntryTotals);
         }
+        async function calculateAverageCost(productId) {
+            try {
+                const transactions = await new Promise((resolve, reject) => {
+                    const transaction = db.transaction(['inventoryTransactions'], 'readonly');
+                    const store = transaction.objectStore('inventoryTransactions');
+                    const request = store.index('productId').getAll(parseInt(productId));
+                    
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (e) => reject(e.target.error);
+                });
 
+                if (transactions.length === 0) {
+                    const product = await getProductById(productId);
+                    return product.purchasePrice || 0;
+                }
+
+                let totalQuantity = 0;
+                let totalCost = 0;
+
+                transactions.forEach(t => {
+                    if (t.type === 'purchase' || t.type === 'adjustment') {
+                        totalQuantity += t.quantity;
+                        totalCost += (t.quantity * t.unitCost);
+                    } else if (t.type === 'sale') {
+                        totalQuantity -= t.quantity;
+                    }
+                });
+
+                return totalQuantity > 0 ? totalCost / totalQuantity : 0;
+            } catch (error) {
+                console.error('فشل حساب متوسط التكلفة:', error);
+                const product = await getProductById(productId);
+                return product.purchasePrice || 0;
+            }
+        }
         /**
         * حساب مجاميع المدين والدائن والفرق بينهما
         */
@@ -8839,7 +8961,17 @@
                 alert('❌ فشل في عملية السداد: ' + error.message);
             }
         }
-
+        function getCustomerById(customerId) {
+            return new Promise((resolve, reject) => {
+                if (!db) return reject(new Error("Database not initialized"));
+                const transaction = db.transaction(['customers'], 'readonly');
+                const store = transaction.objectStore('customers');
+                const request = store.get(customerId);
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
         /**
         * فتح نموذج تحصيل الديون من العملاء
         */
@@ -9444,6 +9576,31 @@
                 initDatabase();
                 // 🔥 إضافة معاينة الصورة
                 setupImagePreview();
+
+                const settingsLink = document.querySelector('[data-module="settings"]');
+                if (settingsLink) {
+                    settingsLink.addEventListener('click', function() {
+                        setTimeout(addSampleDataButtonToSettings, 500);
+                    });
+                }
+
+                // بدء التحقق من البيانات بعد تحميل الصفحة
+                setTimeout(() => {
+                    initializeAppWithSampleData();
+                }, 2000);
+                
+                // تحديث دالة showModule لإضافة الزر عند عرض الإعدادات
+                const originalShowModule = showModule;
+                showModule = function(moduleId) {
+                    originalShowModule(moduleId);
+                    
+                    if (moduleId === 'settings') {
+                        setTimeout(addSampleDataButtonToSettings, 500);
+                    }
+                };
+
+                console.log('✅ تم تحميل وحدة البيانات الافتراضية بنجاح!');
+
             });
 
             // تطبيق النمط المحفوظ
@@ -9609,7 +9766,7 @@
             // زر حفظ الفاتورة
             const saveInvoiceBtn = document.getElementById('saveInvoiceBtn');
             if (saveInvoiceBtn) {
-                saveInvoiceBtn.addEventListener('click', saveInvoice);
+                saveInvoiceBtn.addEventListener('click', saveInvoiceFixed);
             }
 
             // إزالة عنصر من السلة
@@ -9746,7 +9903,7 @@
             // حفظ فاتورة الشراء
             const savePurchaseBtn = document.getElementById('savePurchaseBtn');
             if (savePurchaseBtn) {
-                savePurchaseBtn.addEventListener('click', savePurchaseInvoice);
+                savePurchaseBtn.addEventListener('click', savePurchaseInvoiceFixed);
             }
 
             // زر إضافة فئة
@@ -9916,7 +10073,6 @@
             document.getElementById('executeCollectionBtn')?.addEventListener('click', executeCollection);
             document.getElementById('executeSupplierPaymentBtn')?.addEventListener('click', executeSupplierPayment);
 
-            // إضافة أزرار جديدة في واجهة المحاسبة
             // إضافة أزرار التحصيل والسداد في قسم المحاسبة
             const accountingHeader = document.querySelector('#accounting .card-header');
             if (accountingHeader) {
@@ -10209,7 +10365,322 @@
         window.loadCategoriesView = loadCategoriesView;
 
 
+// ==================== نظام عرض رسائل الكونسول ====================
+// ⚙️ متغير التحكم - غيّره إلى false عند الانتهاء من التطوير
+const SHOW_CONSOLE_BUTTON = true; // true | false
 
+(function() {
+    if (!SHOW_CONSOLE_BUTTON) return;
+
+    // إنشاء العناصر ديناميكياً
+    const consoleToggleBtn = document.createElement('button');
+    const consolePanel = document.createElement('div');
+    const consoleHeader = document.createElement('div');
+    const consoleTitle = document.createElement('span');
+    const consoleCloseBtn = document.createElement('button');
+    const consoleContent = document.createElement('div');
+
+    // تعيين الهويات
+    consoleToggleBtn.id = 'consoleToggleBtn';
+    consolePanel.id = 'consolePanel';
+    consoleContent.id = 'consoleContent';
+
+    // إعداد التنسيقات
+    consoleToggleBtn.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #6c757d;
+        color: white;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        z-index: 9999;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+
+    consolePanel.style.cssText = `
+        position: fixed;
+        bottom: 80px;
+        right: 20px;
+        width: 400px;
+        height: 300px;
+        background: #1e1e1e;
+        color: #00ff00;
+        border: 1px solid #333;
+        border-radius: 8px;
+        z-index: 9998;
+        display: none;
+        flex-direction: column;
+        font-family: 'Courier New', monospace;
+        font-size: 0.8rem;
+    `;
+
+    consoleHeader.style.cssText = `
+        background: #2d2d2d;
+        padding: 8px 12px;
+        border-bottom: 1px solid #333;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    `;
+
+    consoleTitle.style.cssText = `
+        font-weight: bold;
+        color: #fff;
+    `;
+
+    consoleCloseBtn.style.cssText = `
+        background: none;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+        font-size: 1rem;
+    `;
+
+    consoleContent.style.cssText = `
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px;
+        white-space: pre-wrap;
+    `;
+
+    // تعيين المحتوى
+    consoleTitle.textContent = 'نظام المراقبة - Console Logs';
+    consoleCloseBtn.innerHTML = '&times;';
+    consoleToggleBtn.innerHTML = '📋';
+
+    // بناء الهيكل
+    consoleHeader.appendChild(consoleTitle);
+    consoleHeader.appendChild(consoleCloseBtn);
+    consolePanel.appendChild(consoleHeader);
+    consolePanel.appendChild(consoleContent);
+    document.body.appendChild(consoleToggleBtn);
+    document.body.appendChild(consolePanel);
+
+    // تخزين جميع رسائل الكونسول
+    const consoleLogs = [];
+
+    // التقاط رسائل الكونسول الأصلية
+    const originalConsole = {
+        log: console.log,
+        error: console.error,
+        warn: console.warn,
+        info: console.info,
+        debug: console.debug
+    };
+
+    // دالة لالتقاط وتسجيل الرسائل
+    function captureLog(type, args) {
+        const message = Array.from(args).map(arg => {
+            if (typeof arg === 'object') {
+                try {
+                    return JSON.stringify(arg, null, 2);
+                } catch {
+                    return String(arg);
+                }
+            }
+            return String(arg);
+        }).join(' ');
+        
+        const logEntry = {
+            type: type,
+            message: message,
+            timestamp: new Date().toLocaleTimeString('ar-YE'),
+            fullTimestamp: new Date().toISOString()
+        };
+        
+        consoleLogs.push(logEntry);
+        updateConsoleDisplay();
+        
+        // الاحتفاظ بحد أقصى للرسائل لمنع استهلاك الذاكرة
+        if (consoleLogs.length > 1000) {
+            consoleLogs.splice(0, 100);
+        }
+    }
+
+    // استبدال دوال الكونسول
+    console.log = function(...args) {
+        captureLog('log', args);
+        originalConsole.log.apply(console, args);
+    };
+
+    console.error = function(...args) {
+        captureLog('error', args);
+        originalConsole.error.apply(console, args);
+    };
+
+    console.warn = function(...args) {
+        captureLog('warn', args);
+        originalConsole.warn.apply(console, args);
+    };
+
+    console.info = function(...args) {
+        captureLog('info', args);
+        originalConsole.info.apply(console, args);
+    };
+
+    console.debug = function(...args) {
+        captureLog('debug', args);
+        originalConsole.debug.apply(console, args);
+    };
+
+    // دالة تحديث عرض الكونسول
+    function updateConsoleDisplay() {
+        if (consolePanel.style.display !== 'flex') return;
+        
+        // عرض آخر 100 رسالة فقط
+        const recentLogs = consoleLogs.slice(-100);
+        
+        consoleContent.innerHTML = recentLogs.map(log => {
+            const color = getColorForType(log.type);
+            return `
+                <div style="margin-bottom: 4px; border-bottom: 1px solid #333; padding-bottom: 4px;">
+                    <div style="color: #888; font-size: 0.7rem;">[${log.timestamp}]</div>
+                    <div style="color: ${color}; font-family: 'Courier New', monospace;">${escapeHtml(log.message)}</div>
+                </div>
+            `;
+        }).join('');
+        
+        // التمرير للأسفل تلقائياً
+        consoleContent.scrollTop = consoleContent.scrollHeight;
+    }
+
+    // دالة للحصول على اللون المناسب لنوع الرسالة
+    function getColorForType(type) {
+        switch(type) {
+            case 'error': return '#ff4444';
+            case 'warn': return '#ffaa00';
+            case 'info': return '#4488ff';
+            case 'debug': return '#888888';
+            default: return '#00ff00';
+        }
+    }
+
+    // دالة للهروب من الأحرف الخاصة في HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // إضافة أحداث النقر
+    consoleToggleBtn.addEventListener('click', function() {
+        if (consolePanel.style.display === 'flex') {
+            consolePanel.style.display = 'none';
+        } else {
+            consolePanel.style.display = 'flex';
+            updateConsoleDisplay();
+        }
+    });
+
+    consoleCloseBtn.addEventListener('click', function() {
+        consolePanel.style.display = 'none';
+    });
+
+    // إضافة إمكانية السحب (اختياري)
+    let isDragging = false;
+    let dragOffset = { x: 0, y: 0 };
+
+    consoleHeader.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        dragOffset.x = e.clientX - consolePanel.offsetLeft;
+        dragOffset.y = e.clientY - consolePanel.offsetTop;
+        consoleHeader.style.cursor = 'grabbing';
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        
+        consolePanel.style.right = 'auto';
+        consolePanel.style.bottom = 'auto';
+        consolePanel.style.left = (e.clientX - dragOffset.x) + 'px';
+        consolePanel.style.top = (e.clientY - dragOffset.y) + 'px';
+    });
+
+    document.addEventListener('mouseup', function() {
+        isDragging = false;
+        consoleHeader.style.cursor = 'grab';
+    });
+
+    // إضافة أزرار تحكم إضافية
+    const controlsDiv = document.createElement('div');
+    controlsDiv.style.cssText = `
+        display: flex;
+        gap: 5px;
+        margin-left: auto;
+    `;
+
+    const clearBtn = document.createElement('button');
+    clearBtn.textContent = 'مسح';
+    clearBtn.style.cssText = `
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 0.7rem;
+        cursor: pointer;
+    `;
+
+    const exportBtn = document.createElement('button');
+    exportBtn.textContent = 'تصدير';
+    exportBtn.style.cssText = `
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 0.7rem;
+        cursor: pointer;
+    `;
+
+    clearBtn.addEventListener('click', function() {
+        consoleLogs.length = 0;
+        updateConsoleDisplay();
+    });
+
+    exportBtn.addEventListener('click', function() {
+        const logText = consoleLogs.map(log => 
+            `[${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}`
+        ).join('\n');
+        
+        const blob = new Blob([logText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `console-logs-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    controlsDiv.appendChild(clearBtn);
+    controlsDiv.appendChild(exportBtn);
+    consoleHeader.appendChild(controlsDiv);
+
+    // رسالة ترحيب في الكونسول
+    console.log('🚀 نظام مراقبة الكونسول مفعل - Micro ERP');
+    console.log('📊 يمكنك مراقبة جميع عمليات النظام هنا');
+    console.log('⏰ وقت التشغيل: ' + new Date().toLocaleString('ar-YE'));
+    console.log('💡 اضغط على الزر 📋 في الزاوية اليمنى السفلية لعرض الرسائل');
+
+    // التقاط الأخطاء غير المعالجة
+    window.addEventListener('error', function(e) {
+        console.error('خطأ غير معالج:', e.error);
+    });
+
+    window.addEventListener('unhandledrejection', function(e) {
+        console.error('Promise مرفوض غير معالج:', e.reason);
+    });
+
+})();
 
 
 
